@@ -34,14 +34,21 @@ nutriapp/
 
 ```bash
 cd apps/backend
-cp .env.example .env        # completá DATABASE_URL (Railway/Render/Postgres local)
+cp .env.example .env        # completá DATABASE_URL y DIRECT_URL
 npm install
-npx prisma generate         # descarga el motor de Prisma (necesita salir a internet)
-npx prisma migrate dev --name init
+npx prisma generate
+npx prisma migrate deploy   # o `migrate dev` si vas a cambiar el schema
 npm run dev                 # http://localhost:4000
 ```
 
-> Nota: en el sandbox donde armamos este scaffold no había salida a `binaries.prisma.sh`, así que `prisma generate` no se pudo terminar de correr ahí. Los tipos de TypeScript ya están generados y el proyecto tipa bien; correlo en tu máquina o en el pipeline de deploy para bajar el motor nativo antes de levantar el server.
+La base es Postgres en **Supabase** (proyecto `Morfisano`, región `sa-east-1`). Prisma necesita dos URLs y las dos van por el pooler:
+
+| Variable | Pooler | Puerto | Para qué |
+|---|---|---|---|
+| `DATABASE_URL` | transaction | `6543` | la app en runtime (lleva `?pgbouncer=true`) |
+| `DIRECT_URL` | session | `5432` | `prisma migrate` |
+
+Las migraciones no pueden ir por el pooler en modo transaction porque pgbouncer no soporta los prepared statements que usan. Y conviene que `DIRECT_URL` sea el pooler en modo session y no la conexión directa `db.<ref>.supabase.co`, porque esa última es **IPv6 only** en el plan free y falla desde redes IPv4.
 
 ### Mobile
 
@@ -60,8 +67,8 @@ EXPO_PUBLIC_API_URL=http://192.168.0.X:4000
 
 ## Próximos pasos (roadmap)
 
-1. **Auth real**: reemplazar el stub de `x-user-id` por Supabase Auth o Clerk, y agregar pantallas de login/signup en mobile.
-2. **Conectar el onboarding al backend**: hoy `completeOnboarding` calcula las metas en el cliente; falta pegarle a `PUT /api/profile` para persistir el perfil.
+1. ~~**Conectar el onboarding al backend**~~ ✅ El perfil se persiste con `PUT /api/profile`; al arrancar, la app hace `GET /api/profile` y saltea el onboarding si ya está hecho.
+2. **Auth real**: reemplazar el stub de `x-user-id` por Supabase Auth (el proyecto ya está creado) y agregar pantallas de login/signup en mobile.
 3. **Base nutricional real**: sumar Open Food Facts (código de barras + productos envasados) y/o USDA FoodData Central para no depender solo de la tabla local en `nutritionLookup.ts`.
 4. **Pagos**: integrar RevenueCat para manejar suscripciones in-app (iOS/Android) y separar features free/premium.
 5. **Deploy**: backend a Railway o Render (como ya venís laburando), base de datos Postgres gestionada, y build de mobile con EAS (`eas build`).
