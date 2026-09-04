@@ -1,4 +1,5 @@
 import type {
+  BarcodeProduct,
   ExerciseEntry,
   FoodEntry,
   PhotoAnalysisResult,
@@ -6,16 +7,11 @@ import type {
   UserProfile,
   WaterEntry,
 } from '../types';
+import { supabase } from '../lib/supabase';
 
 // Apuntá esto a tu backend (Railway/Render) una vez desplegado.
 // En desarrollo local con Expo Go, usá la IP de tu máquina en la red, no "localhost".
 export const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:4000';
-
-// TODO: cuando haya auth real (Supabase/Clerk), el id sale del token de sesión y
-// este header se reemplaza por un `Authorization: Bearer ...`. Mientras tanto se
-// puede setear EXPO_PUBLIC_USER_ID para probar con varios usuarios en desarrollo;
-// sin la variable, el backend usa su usuario demo.
-const DEV_USER_ID = process.env.EXPO_PUBLIC_USER_ID;
 
 export class ApiError extends Error {
   constructor(public status: number, message: string) {
@@ -36,11 +32,16 @@ function extractErrorMessage(body: string): string {
 }
 
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
+  // getSession() devuelve la sesión guardada y la refresca sola si el access
+  // token está vencido, así que alcanza con pedirla antes de cada request.
+  const { data } = await supabase.auth.getSession();
+  const token = data.session?.access_token;
+
   const res = await fetch(`${API_BASE_URL}${path}`, {
     ...options,
     headers: {
       'Content-Type': 'application/json',
-      ...(DEV_USER_ID ? { 'x-user-id': DEV_USER_ID } : {}),
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...options.headers,
     },
   });
@@ -88,5 +89,10 @@ export const api = {
         method: 'POST',
         body: JSON.stringify({ imageBase64 }),
       }),
+  },
+  barcode: {
+    // Resuelve un EAN/UPC contra Open Food Facts. Tira ApiError 404 si el
+    // producto no está en la base.
+    lookup: (code: string) => request<BarcodeProduct>(`/api/barcode/${encodeURIComponent(code)}`),
   },
 };

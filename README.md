@@ -26,7 +26,8 @@ nutriapp/
 - API REST: `/api/foods`, `/api/exercises`, `/api/water`, `/api/profile`, `/api/analyze-photo`.
 - Schema de Prisma con `User`, `FoodEntry`, `ExerciseEntry`, `WaterEntry`, `WeightLog`.
 - Análisis de fotos: si configurás `ANTHROPIC_API_KEY`, usa Claude Vision para identificar los alimentos de la foto y estima porciones; después cruza cada ítem contra una base nutricional local (`src/services/nutritionLookup.ts`) para calcular calorías y macros. Sin la key, devuelve una estimación mock para que puedas seguir developeando sin depender de la IA.
-- Auth: por ahora es un stub por header (`x-user-id`, con un usuario demo por default) para no bloquear el desarrollo. Hay que reemplazarlo por auth real antes de producción (ver Próximos pasos).
+- Auth: **Supabase Auth**. El mobile hace login/signup con `supabase-js` y manda el access token en `Authorization: Bearer`; el backend valida la firma contra el JWKS público del proyecto. Supabase firma con **ES256** (clave asimétrica), así que el backend solo necesita la clave pública: no hay ningún secreto compartido entre las dos apps. El `sub` del token es el `User.id`.
+- Código de barras: `/api/barcode/:code` resuelve productos envasados contra **Open Food Facts** y devuelve los macros por 100 g. El mobile escanea con la cámara (EAN-13/8, UPC-A/E) y deja ajustar los gramos, recalculando calorías y macros en vivo.
 
 ## Cómo correrlo
 
@@ -68,8 +69,13 @@ EXPO_PUBLIC_API_URL=http://192.168.0.X:4000
 ## Próximos pasos (roadmap)
 
 1. ~~**Conectar el onboarding al backend**~~ ✅ El perfil se persiste con `PUT /api/profile`; al arrancar, la app hace `GET /api/profile` y saltea el onboarding si ya está hecho.
-2. **Auth real**: reemplazar el stub de `x-user-id` por Supabase Auth (el proyecto ya está creado) y agregar pantallas de login/signup en mobile.
-3. **Base nutricional real**: sumar Open Food Facts (código de barras + productos envasados) y/o USDA FoodData Central para no depender solo de la tabla local en `nutritionLookup.ts`.
+2. ~~**Auth real**~~ ✅ Supabase Auth con login/signup por mail y validación del JWT contra el JWKS del proyecto.
+3. ~~**Código de barras**~~ ✅ Escaneo con la cámara + Open Food Facts. Falta sumar USDA FoodData Central para comida no envasada.
 4. **Pagos**: integrar RevenueCat para manejar suscripciones in-app (iOS/Android) y separar features free/premium.
 5. **Deploy**: backend a Railway o Render (como ya venís laburando), base de datos Postgres gestionada, y build de mobile con EAS (`eas build`).
+
+### Antes de salir a producción
+
+- **SMTP propio.** El mail de confirmación de cuenta sale hoy por el servidor de Supabase, que está limitado a unos pocos envíos por hora y no es para producción. Hay que configurar un SMTP propio (Resend, Postmark, SES) en Auth → Emails.
+- **`DEV_AUTH_USER_ID` sin setear.** Es una escotilla de desarrollo que saltea la autenticación entera. Se ignora si `NODE_ENV=production`, pero conviene no tenerla en el `.env` del server.
 6. **Apartados nuevos sugeridos**: escaneo de código de barras, registro de peso corporal con gráfico de evolución, rutinas de entrenamiento con series/repeticiones, integración con Google Fit / Apple Health, racha y logros, timer de ayuno intermitente, recetas sugeridas, exportar reportes en PDF, panel admin web.

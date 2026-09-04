@@ -90,10 +90,14 @@ profileRouter.put(
     const parsed = parseProfileInput(req.body);
     if ('error' in parsed) return res.status(400).json({ error: parsed.error });
 
+    // El email sale del token de Supabase, no del body: es el usuario quien lo
+    // verificó al registrarse, y no queremos que el cliente pueda mandar otro.
+    const email = req.userEmail ? { email: req.userEmail } : {};
+
     const user = await prisma.user.upsert({
       where: { id: req.userId },
-      update: parsed.data,
-      create: { id: req.userId, ...parsed.data },
+      update: { ...parsed.data, ...email },
+      create: { id: req.userId, ...parsed.data, ...email },
     });
 
     // El peso del perfil es también un punto del historial, así el gráfico de

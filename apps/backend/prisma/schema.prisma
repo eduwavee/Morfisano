@@ -44,11 +44,10 @@ enum FoodSource {
 }
 
 model User {
-  // TODO: cuando se implemente auth real, este id puede pasar a ser un cuid
-  // generado en el signup en vez del valor crudo del header x-user-id.
+  // Es el `sub` del JWT de Supabase (el UUID del usuario en auth.users).
+  // No guardamos contraseñas: de eso se encarga Supabase Auth.
   id            String        @id
   email         String?       @unique
-  passwordHash  String?
   name          String
   sex           Sex
   age           Int

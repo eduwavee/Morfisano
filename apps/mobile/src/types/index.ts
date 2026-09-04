@@ -73,3 +73,17 @@ export interface PhotoAnalysisResult {
   detectedItems: { name: string; confidence: number }[];
   estimated: MacroBreakdown;
 }
+
+/** Producto resuelto desde Open Food Facts a partir de un código de barras. */
+export interface BarcodeProduct {
+  barcode: string;
+  name: string;
+  brand: string | null;
+  /** Open Food Facts normaliza todo por 100 g. */
+  per100g: MacroBreakdown;
+  /** Gramos por porción, cuando el producto los declara de forma parseable. */
+  servingSizeG: number | null;
+  imageUrl: string | null;
+  /** El producto existe pero no tiene macros cargadas; hay que completarlas a mano. */
+  incomplete: boolean;
+}

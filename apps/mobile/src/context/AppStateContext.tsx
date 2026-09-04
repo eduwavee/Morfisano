@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useMemo, useState, useCallback, useEffect } from 'react';
 import { api, ApiError } from '../api/client';
+import { useAuth } from './AuthContext';
 import { calculateDailyGoals } from '../utils/nutrition';
 import type {
   DailyGoals,
@@ -44,11 +45,31 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [offline, setOffline] = useState(false);
 
-  // Al arrancar trae el perfil guardado (para saltear el onboarding si ya está
-  // hecho) y lo cargado hoy. Si el backend no está desplegado o no hay conexión,
-  // arranca con el día en blanco en modo local.
+  const { session } = useAuth();
+  const userId = session?.user.id ?? null;
+
+  // Al entrar un usuario trae su perfil (para saltear el onboarding si ya está
+  // hecho) y lo que cargó hoy. Si el backend no está desplegado o no hay
+  // conexión, arranca con el día en blanco en modo local.
+  //
+  // Depende de userId, no de [], porque al cambiar de cuenta hay que tirar el
+  // estado del usuario anterior: si no, el que entra vería el día del que salió.
   useEffect(() => {
     const date = todayKey();
+
+    setProfile(null);
+    setGoals(null);
+    setFoods([]);
+    setExercises([]);
+    setWater([]);
+    setOffline(false);
+
+    if (!userId) {
+      setLoading(false);
+      return;
+    }
+
+    setLoading(true);
 
     async function bootstrap() {
       try {
@@ -82,7 +103,7 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
     }
 
     bootstrap().finally(() => setLoading(false));
-  }, []);
+  }, [userId]);
 
   // Persiste el perfil en el backend y usa las metas que devuelve. Si el backend
   // no responde, cae a las metas calculadas en el cliente para no trabar el

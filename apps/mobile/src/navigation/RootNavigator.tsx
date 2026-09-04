@@ -6,6 +6,8 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../theme/colors';
 import { useAppState } from '../context/AppStateContext';
+import { useAuth } from '../context/AuthContext';
+import { LoginScreen } from '../screens/LoginScreen';
 import { OnboardingScreen } from '../screens/OnboardingScreen';
 import { DashboardScreen } from '../screens/DashboardScreen';
 import { DiaryScreen } from '../screens/DiaryScreen';
@@ -14,6 +16,7 @@ import { WaterScreen } from '../screens/WaterScreen';
 import { ProfileScreen } from '../screens/ProfileScreen';
 import { AddFoodScreen } from '../screens/AddFoodScreen';
 import { CameraScreen } from '../screens/CameraScreen';
+import { BarcodeScannerScreen } from '../screens/BarcodeScannerScreen';
 import type { RootStackParamList, TabParamList } from './types';
 
 const Tab = createBottomTabNavigator<TabParamList>();
@@ -48,19 +51,32 @@ function MainTabs() {
   );
 }
 
-export function RootNavigator() {
-  const { profile, loading } = useAppState();
+function Splash() {
+  return (
+    <View style={styles.splash}>
+      <ActivityIndicator size="large" color={colors.primary} />
+    </View>
+  );
+}
 
-  // Mientras se consulta el perfil guardado no sabemos si corresponde el
-  // onboarding o las tabs: sin esto, el onboarding aparecería un instante
-  // aunque el usuario ya lo tenga completo.
-  if (loading) {
+export function RootNavigator() {
+  const { session, loading: authLoading } = useAuth();
+  const { profile, loading: appLoading } = useAppState();
+
+  // Tres compuertas, en orden: ¿hay sesión guardada? ¿quién es? ¿ya se onboardeó?
+  // Mientras cualquiera está resolviendo mostramos el splash, así no se ve
+  // parpadear el login a quien ya está adentro.
+  if (authLoading) return <Splash />;
+
+  if (!session) {
     return (
-      <View style={styles.splash}>
-        <ActivityIndicator size="large" color={colors.primary} />
-      </View>
+      <NavigationContainer>
+        <LoginScreen />
+      </NavigationContainer>
     );
   }
+
+  if (appLoading) return <Splash />;
 
   return (
     <NavigationContainer>
@@ -77,6 +93,11 @@ export function RootNavigator() {
           <Stack.Screen
             name="Camera"
             component={CameraScreen}
+            options={{ presentation: 'fullScreenModal', headerShown: false }}
+          />
+          <Stack.Screen
+            name="BarcodeScanner"
+            component={BarcodeScannerScreen}
             options={{ presentation: 'fullScreenModal', headerShown: false }}
           />
         </Stack.Navigator>

@@ -1,9 +1,10 @@
 import React from 'react';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Card } from '../components/Card';
 import { colors } from '../theme/colors';
 import { useAppState } from '../context/AppStateContext';
+import { useAuth } from '../context/AuthContext';
 
 const ACTIVITY_LABELS: Record<string, string> = {
   sedentary: 'Sedentario',
@@ -21,8 +22,16 @@ const GOAL_LABELS: Record<string, string> = {
 
 export function ProfileScreen() {
   const { profile, goals } = useAppState();
+  const { session, signOut } = useAuth();
 
   if (!profile || !goals) return null;
+
+  function handleSignOut() {
+    Alert.alert('Cerrar sesión', '¿Seguro que querés salir de tu cuenta?', [
+      { text: 'Cancelar', style: 'cancel' },
+      { text: 'Cerrar sesión', style: 'destructive', onPress: () => void signOut() },
+    ]);
+  }
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
@@ -31,6 +40,7 @@ export function ProfileScreen() {
           <Text style={styles.avatarText}>{profile.name.charAt(0).toUpperCase()}</Text>
         </View>
         <Text style={styles.name}>{profile.name}</Text>
+        {session?.user.email && <Text style={styles.email}>{session.user.email}</Text>}
       </View>
 
       <Card style={styles.card}>
@@ -62,6 +72,11 @@ export function ProfileScreen() {
           </View>
         </View>
       </Card>
+
+      <TouchableOpacity style={styles.signOutButton} onPress={handleSignOut}>
+        <Ionicons name="log-out-outline" size={18} color={colors.danger} />
+        <Text style={styles.signOutText}>Cerrar sesión</Text>
+      </TouchableOpacity>
     </ScrollView>
   );
 }
@@ -91,6 +106,16 @@ const styles = StyleSheet.create({
   },
   avatarText: { fontSize: 28, fontWeight: '800', color: colors.white },
   name: { fontSize: 18, fontWeight: '700', color: colors.text },
+  email: { fontSize: 13, color: colors.textMuted, marginTop: 2 },
+  signOutButton: {
+    flexDirection: 'row',
+    gap: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 14,
+    marginTop: 4,
+  },
+  signOutText: { fontSize: 14, fontWeight: '700', color: colors.danger },
   card: { marginBottom: 14 },
   cardTitle: { fontSize: 14, fontWeight: '700', color: colors.text, marginBottom: 10 },
   row: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 6 },

@@ -2,12 +2,16 @@ import 'dotenv/config';
 import express from 'express';
 import type { NextFunction, Request, Response } from 'express';
 import cors from 'cors';
-import { requireUser } from './middleware/auth';
+import { assertAuthConfig, requireUser } from './middleware/auth';
 import { foodsRouter } from './routes/foods';
 import { exercisesRouter } from './routes/exercises';
 import { waterRouter } from './routes/water';
 import { profileRouter } from './routes/profile';
 import { analyzePhotoRouter } from './routes/analyzePhoto';
+import { barcodeRouter } from './routes/barcode';
+
+// Antes de escuchar: si no hay forma de autenticar, mejor no arrancar.
+assertAuthConfig();
 
 const app = express();
 
@@ -22,6 +26,7 @@ app.use('/api/exercises', exercisesRouter);
 app.use('/api/water', waterRouter);
 app.use('/api/profile', profileRouter);
 app.use('/api/analyze-photo', analyzePhotoRouter);
+app.use('/api/barcode', barcodeRouter);
 
 // Middleware de errores: recibe lo que los handlers async derivan vía asyncHandler.
 // Va último, después de todas las rutas, y necesita los 4 parámetros para que

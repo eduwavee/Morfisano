@@ -12,6 +12,7 @@ export const colors = {
   textMuted: '#6B7280',
   border: '#E5E7EB',
   danger: '#DC2626',
+  dangerLight: '#FEE2E2',
   white: '#FFFFFF',
 };
 
