@@ -1,0 +1,117 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  // En runtime la app va por el pooler de Supabase (pgbouncer, puerto 6543).
+  url       = env("DATABASE_URL")
+  // Las migraciones necesitan una conexión directa (puerto 5432): pgbouncer no
+  // soporta los prepared statements que usa `prisma migrate`.
+  directUrl = env("DIRECT_URL")
+}
+
+enum Sex {
+  male
+  female
+}
+
+enum ActivityLevel {
+  sedentary
+  light
+  moderate
+  active
+  very_active
+}
+
+enum Goal {
+  lose
+  maintain
+  gain
+}
+
+enum MealType {
+  breakfast
+  lunch
+  dinner
+  snack
+}
+
+enum FoodSource {
+  manual
+  photo
+  barcode
+}
+
+model User {
+  // TODO: cuando se implemente auth real, este id puede pasar a ser un cuid
+  // generado en el signup en vez del valor crudo del header x-user-id.
+  id            String        @id
+  email         String?       @unique
+  passwordHash  String?
+  name          String
+  sex           Sex
+  age           Int
+  heightCm      Float
+  weightKg      Float
+  activityLevel ActivityLevel
+  goal          Goal
+  isPremium     Boolean       @default(false)
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  foodEntries     FoodEntry[]
+  exerciseEntries ExerciseEntry[]
+  waterEntries    WaterEntry[]
+  weightLogs      WeightLog[]
+}
+
+model FoodEntry {
+  id            String     @id @default(cuid())
+  userId        String
+  user          User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name          String
+  mealType      MealType
+  quantityLabel String
+  calories      Float
+  proteinG      Float
+  carbsG        Float
+  fatG          Float
+  source        FoodSource @default(manual)
+  photoUrl      String?
+  loggedAt      DateTime   @default(now())
+
+  @@index([userId, loggedAt])
+}
+
+model ExerciseEntry {
+  id             String   @id @default(cuid())
+  userId         String
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name           String
+  durationMin    Int
+  caloriesBurned Int
+  loggedAt       DateTime @default(now())
+
+  @@index([userId, loggedAt])
+}
+
+model WaterEntry {
+  id       String   @id @default(cuid())
+  userId   String
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  amountMl Int
+  loggedAt DateTime @default(now())
+
+  @@index([userId, loggedAt])
+}
+
+model WeightLog {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  weightKg  Float
+  loggedAt  DateTime @default(now())
+
+  @@index([userId, loggedAt])
+}

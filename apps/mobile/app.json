@@ -1,0 +1,42 @@
+{
+  "expo": {
+    "name": "NutriApp",
+    "slug": "nutriapp",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "scheme": "nutriapp",
+    "plugins": [
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "NutriApp necesita la cámara para sacarle foto a tus comidas y estimar las calorías."
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "NutriApp necesita acceso a tus fotos para analizar comidas guardadas."
+        }
+      ]
+    ],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.syncsolutions.nutriapp"
+    },
+    "android": {
+      "package": "com.syncsolutions.nutriapp",
+      "adaptiveIcon": {
+        "backgroundColor": "#E6F4FE",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "predictiveBackGestureEnabled": false
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    }
+  }
+}
